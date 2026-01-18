@@ -88,7 +88,7 @@ if __name__ == "__main__":
     df_docs = load_documents(docs_path)
     raw_documents = df_docs['raw_text'].tolist()
     
-    #TF-IDF VECTORIZER CLUSTERING
+    # =================== TF-IDF VECTORIZER CLUSTERING
     print("\n" + "="*50)
     print("PART A: Clustering with TF-IDF")
     print("="*50)
@@ -102,13 +102,13 @@ if __name__ == "__main__":
     print(f"-> Suggested k for TF-IDF: {best_k_tfidf}")
     
     #run final clustering
-    kmeans_tfidf = KMeans(n_clusters=best_k_tfidf, random_state=42, n_init=10)
+    kmeans_tfidf = KMeans(n_clusters=best_k_tfidf, random_state=67, n_init=10)
     labels_tfidf = kmeans_tfidf.fit_predict(tfidf_matrix)
     
     #visualize
     visualize_clusters(tfidf_matrix, labels_tfidf, "TF-IDF")
 
-    #BERT EMBEDDINGS CLUSTERING
+    # =================== BERT EMBEDDINGS CLUSTERING
     print("\n" + "="*50)
     print("PART B: Clustering with BERT Embeddings")
     print("="*50)
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     print(f"-> Suggested k for Embeddings: {best_k_bert}")
     
     #run final clustering
-    kmeans_bert = KMeans(n_clusters=best_k_bert, random_state=42, n_init=10)
+    kmeans_bert = KMeans(n_clusters=best_k_bert, random_state=67, n_init=10)
     labels_bert = kmeans_bert.fit_predict(embeddings_matrix)
     
     #visualize
