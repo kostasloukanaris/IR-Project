@@ -83,16 +83,16 @@ def build_inverted_index(df):
         d_id = row['doc_id']
         tokens = row['tokens'] 
         
-       #calc term frequencies for the document
-        tf_counts = {}
+       #calc tokens frequencies for the document
+        tf_counts = {} # Note that this is a key addressed dictionary
         for token in tokens:
             tf_counts[token] = tf_counts.get(token, 0) + 1
             
        #update inverted index
-        for term, count in tf_counts.items():
-            if term not in index:
-                index[term] = []
-            # Store: [Document ID, Term Frequency]
-            index[term].append([d_id, count])
+        for token, count in tf_counts.items():
+            if token not in index:
+                index[token] = []
+            # Store: [Document ID, tokens Frequency]
+            index[token].append([d_id, count])
             
     return index

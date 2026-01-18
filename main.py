@@ -24,11 +24,10 @@ base_path = "collection"
 docs_path = os.path.join(base_path, "docs")
 queries_path = os.path.join(base_path, "Queries.txt")
 relevance_path = os.path.join(base_path, "Relevant.txt")
-
 # load docs
 print("--- ΦΑΣΗ 1: Φόρτωση Δεδομένων ---")
 df_docs = load_documents(docs_path)
-df_docs['tokens'] = df_docs['raw_text'].apply(clean_text)
+df_docs['tokens'] = df_docs['raw_text'].apply(clean_text) # Note that this affects dataframe manipulation in index building
 
 # build index
 index = build_inverted_index(df_docs)
@@ -52,7 +51,7 @@ if os.path.exists(queries_path):
     
     # search
     q_tokens = clean_text(q_text)
-    results = vsm.search(q_tokens, scheme='classic')
+    results = vsm.search(q_tokens, scheme='alternative')
     results_show = results[:10] # top 10 results
 
     # print results

@@ -147,17 +147,27 @@ if __name__ == "__main__":
         args = dict(zip(keys, combo))
         try:
             vectorizer = TfidfVectorizer(norm='l2', stop_words='english', **args)
-            tfidf_matrix = vectorizer.fit_transform(raw_documents)
-            query_matrix = vectorizer.transform(queries)
+            tfidf_matrix = vectorizer.fit_transform(raw_documents) #build index and clean and calc idf and calc tf-idf weights for all docs 
+            query_matrix = vectorizer.transform(queries) #transform queries to tf-idf vectors (we dont use fit cause we dont want to change the index we only want to transform the queries)
             similarity_matrix = cosine_similarity(query_matrix, tfidf_matrix)
             
             total_map = 0
             total_p10 = 0
             
-            for q_idx, scores in enumerate(similarity_matrix):
+            for q_idx, query_scores in enumerate(similarity_matrix):
                 q_id = q_idx + 1
-                ranked_results = sorted(zip(doc_ids, scores), key=lambda x: x[1], reverse=True)
-                retrieved_ids = [doc[0] for doc in ranked_results if doc[1] > 0]
+
+                # Pair each document ID with its calculated similarity score
+                doc_id_score_pairs = zip(doc_ids, query_scores)
+
+                # Sort these pairs in descending order based on the score.
+                # The score is the second element (index 1) in each (doc_id, score) pair.
+                ranked_doc_pairs = sorted(doc_id_score_pairs, key=lambda pair: pair[1], reverse=True)
+
+                # Create a list of retrieved document IDs, but only include those
+                # with a similarity score greater than 0.
+                retrieved_ids = [doc_id for doc_id, score in ranked_doc_pairs if score > 0]
+                
                 relevant_ids = relevance_data.get(q_id, [])
                 
                 if relevant_ids:
@@ -188,15 +198,16 @@ if __name__ == "__main__":
     print(f"Stats -> MAP: {best_scores['MAP']:.4f} | P@10: {best_scores['P@10']:.4f}\n")
 
     
-    print("Phase 2: Final Comparison of 3 Models")
+    # --- Phase 2: Final Comparison of 3 Models ---
     
     results_summary = []
     
-    #optimized sklearn model
+    # 1. Optimized Sklearn Model
     print("\n1. Running Optimized Sklearn Model...")
     t0 = time.time()
     vectorizer = TfidfVectorizer(norm='l2', stop_words='english', **best_params)
     tfidf_matrix = vectorizer.fit_transform(raw_documents)
+    
     idx_time = time.time() - t0
     
     t1 = time.time()
@@ -204,10 +215,15 @@ if __name__ == "__main__":
     similarity_matrix = cosine_similarity(query_matrix, tfidf_matrix)
     
     sklearn_results = []
-    for q_idx, scores in enumerate(similarity_matrix):
-        ranked = sorted(zip(doc_ids, scores), key=lambda x: x[1], reverse=True)
-        ids = [doc[0] for doc in ranked if doc[1] > 0]
-        sklearn_results.append((q_idx + 1, ids))
+    for q_idx, query_scores in enumerate(similarity_matrix):
+        doc_id_score_pairs = zip(doc_ids, query_scores)
+
+        ranked_doc_pairs = sorted(doc_id_score_pairs, key=lambda pair: pair[1], reverse=True)
+
+        retrieved_ids = [doc_id for doc_id, score in ranked_doc_pairs if score > 0]
+
+        sklearn_results.append((q_idx + 1, retrieved_ids))
+
     search_time = time.time() - t1
     
     stats_sklearn, curve_sklearn = evaluate_and_track(sklearn_results, relevance_data, evaluator)
@@ -218,24 +234,28 @@ if __name__ == "__main__":
         **stats_sklearn
     })
 
-    #prepare for custom models
+    # --- Prepare for Custom Models ---
     print("\nPreparing Custom VSM (Tokenization)...")
     df_docs['tokens'] = df_docs['raw_text'].apply(clean_text)
     
-    #custom vsm (classic)
+    # 2. Custom VSM (Classic)
     print("2. Running Custom VSM (Classic)...")
     t0 = time.time()
     index = build_inverted_index(df_docs)
     vsm = VectorSpaceModel(index, len(df_docs))
-    idx_time_custom = time.time() - t0 #same index for both custom models
+    idx_time_custom = time.time() - t0 # Same index for both custom models
     
     t1 = time.time()
     custom_classic_results = []
     for q_id, q_text in enumerate(queries, 1):
         q_tokens = clean_text(q_text)
-        res = vsm.search(q_tokens, scheme='classic')
-        ids = [doc[0] for doc in res]
-        custom_classic_results.append((q_id, ids))
+
+        search_results = vsm.search(q_tokens, scheme='classic')
+
+        retrieved_ids = [doc_id for doc_id, score in search_results]
+
+        custom_classic_results.append((q_id, retrieved_ids))
+
     search_time = time.time() - t1
     
     stats_classic, curve_classic = evaluate_and_track(custom_classic_results, relevance_data, evaluator)
@@ -246,28 +266,32 @@ if __name__ == "__main__":
         **stats_classic
     })
 
-    #custom vsm (alternative)
+    # 3. Custom VSM (Alternative)
     print("3. Running Custom VSM (Alternative)...")
-    #index is already built, so index time is 0 (or same as above)
+    # Index is already built, so index time is effectively 0
     t1 = time.time()
     custom_alt_results = []
     for q_id, q_text in enumerate(queries, 1):
         q_tokens = clean_text(q_text)
-        res = vsm.search(q_tokens, scheme='alternative') 
-        ids = [doc[0] for doc in res]
-        custom_alt_results.append((q_id, ids))
+
+        search_results = vsm.search(q_tokens, scheme='alternative') 
+
+        retrieved_ids = [doc_id for doc_id, score in search_results]
+
+        custom_alt_results.append((q_id, retrieved_ids))
+
     search_time = time.time() - t1
     
     stats_alt, curve_alt = evaluate_and_track(custom_alt_results, relevance_data, evaluator)
     results_summary.append({
         'Model': 'Custom VSM (Alternative)', 
-        'Index Time': idx_time_custom, 
+        'Index Time': idx_time_custom, # Re-using index time from classic model
         'Search Time': search_time, 
         **stats_alt
     })
 
     
-    
+    # --- Final Results ---
     
     print("\n" + "="*80)
     print(f"{'Model':<25} | {'Idx(s)':<8} | {'Srch(s)':<8} | {'MAP':<8} | {'P@10':<8} | {'F1':<8}")
@@ -276,7 +300,7 @@ if __name__ == "__main__":
         print(f"{res['Model']:<25} | {res['Index Time']:<8.4f} | {res['Search Time']:<8.4f} | {res['MAP']:<8.4f} | {res['P@10']:<8.4f} | {res['F1']:<8.4f}")
     print("="*80)
     
-    #plot pr curves
+    # --- Plot PR Curves ---
     
     plt.figure(figsize=(10, 6))
     plt.plot(curve_sklearn[0], curve_sklearn[1], label=f"Sklearn (MAP={stats_sklearn['MAP']:.3f})", linewidth=2)
@@ -288,4 +312,5 @@ if __name__ == "__main__":
     plt.title('Comparison of Precision-Recall Curves')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.savefig('pr_curve_comparison.png')
+    print("\nPlot saved as pr_curve_comparison.png")
