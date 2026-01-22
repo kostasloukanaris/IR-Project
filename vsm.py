@@ -27,7 +27,7 @@ class VectorSpaceModel:
             return tf * idf
             
         elif scheme == 'alternative':
-            #log normalization-idf: (1 + log(tf)) * idf
+            #log normalization-tf: (1 + log(tf)) * idf
             if tf > 0:
                 return (1 + math.log10(tf)) * idf
             return 0
@@ -71,24 +71,24 @@ class VectorSpaceModel:
                         dot_prod[doc_id] = 0
                     dot_prod[doc_id] += scaled_comp_q * scaled_comp_d
 
-        # Calculate document vector lengths on-the-fly for relevant docs
+        #calculate document vector lengths on-the-fly for relevant docs
         doc_lengths = {}
         for doc_id in relevant_docs:
             len_sq = 0
-            # To get all terms for a doc, we must iterate through the index
-            # This is inefficient but necessary for on-the-fly calculation
+
+            #here we need to go through all terms to find the weights, inefficient but oh well
             for term, postings in self.inverted_index.items():
                 for post_doc_id, tf in postings:
                     if post_doc_id == doc_id:
                         weight = self.get_weight(tf, term, scheme)
                         len_sq += weight ** 2
-                        break # Move to next term once doc is found
+                        break #found the doc in postings, move to next term
             doc_lengths[doc_id] = math.sqrt(len_sq)
 
         #finalize and sort
         results = []
         for doc_id, dot_product in dot_prod.items():
-            doc_length = doc_lengths.get(doc_id, 1) # Default to 1 to avoid division by zero
+            doc_length = doc_lengths.get(doc_id, 1) #default to 1 to avoid division by zero
             
             #full cosine similarity: dot_product / (query_length * doc_length)
             if query_length > 0 and doc_length > 0:

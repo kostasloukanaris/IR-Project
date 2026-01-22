@@ -115,7 +115,8 @@ if __name__ == "__main__":
     
     #load hugging face model
     print("Loading Hugging Face model (all-MiniLM-L6-v2)...")
-    #point this to your downloaded folder if needed
+    
+    #point this to downloaded folder if needed
     model = SentenceTransformer('all-MiniLM-L6-v2')
     
     #encode documents

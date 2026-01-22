@@ -57,7 +57,7 @@ def load_documents(directory_path, total_files=1239):
                 with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     raw_text = f.read()
                     
-                    doc_ids.append(i) # Keep the ID as a number (to match Relevant.txt)
+                    doc_ids.append(i) #keep the ID as a number tp match relevant txt
                     contents.append(raw_text)
             except Exception as e:
                 print(f"Πρόβλημα στο αρχείο {file_id_str}: {e}")
@@ -84,7 +84,7 @@ def build_inverted_index(df):
         tokens = row['tokens'] 
         
        #calc tokens frequencies for the document
-        tf_counts = {} # Note that this is a key addressed dictionary
+        tf_counts = {} 
         for token in tokens:
             tf_counts[token] = tf_counts.get(token, 0) + 1
             
@@ -92,7 +92,7 @@ def build_inverted_index(df):
         for token, count in tf_counts.items():
             if token not in index:
                 index[token] = []
-            # Store: [Document ID, tokens Frequency]
+            #store: [document ID, tokens frequency]
             index[token].append([d_id, count])
             
     return index

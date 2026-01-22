@@ -46,11 +46,13 @@ def calculate_average_precision(retrieved_docs, relevant_docs):
     return score / len(relevant_docs)
 
 def get_interpolated_pr_curve(p_r_points):
+
     #interpolates precision at standard recall levels (0.0 to 1.0) for smooth plotting
     recall_levels = np.linspace(0.0, 1.0, 11)
     interpolated_p = []
     
     for r in recall_levels:
+
         #find max precision for recall >= r
         precisions = [p for p, rec in p_r_points if rec >= r]
         if precisions:
@@ -61,7 +63,8 @@ def get_interpolated_pr_curve(p_r_points):
     return recall_levels, interpolated_p
 
 def evaluate_and_track(retrieved_lists, relevance_data, evaluator):
-    #calculates aggregate metrics for a list of results
+
+    #calculates metrics for a list of results
     total_p = 0
     total_r = 0
     total_f1 = 0
