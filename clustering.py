@@ -26,7 +26,6 @@ def ensure_dir(directory): #for graph dir
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-
 def find_optimal_k(data, max_k=10, title="Silhouette Analysis"):
     #runs k-means for k=2 to max_k using only silhouette score
     print(f"\n--- Finding Optimal K for {title} ---")
@@ -59,8 +58,6 @@ def find_optimal_k(data, max_k=10, title="Silhouette Analysis"):
     best_k = k_range[np.argmax(silhouettes)]
     return best_k
 
-
-
 def visualize_clusters(data, labels, title):
     #reduces data to 2d using pca and plots the clusters
     print(f"Visualizing {title}...")
@@ -82,8 +79,6 @@ def visualize_clusters(data, labels, title):
     plt.savefig(filename)
     print(f"Saved visualization to {filename}")
 
-
-
 if __name__ == "__main__":
     #setup directory
     ensure_dir(graphs_dir)
@@ -93,7 +88,7 @@ if __name__ == "__main__":
     df_docs = load_documents(docs_path)
     raw_documents = df_docs['raw_text'].tolist()
     
-    #TF-IDF VECTORIZER CLUSTERING
+    # =================== TF-IDF VECTORIZER CLUSTERING
     print("\n" + "="*50)
     print("PART A: Clustering with TF-IDF")
     print("="*50)
@@ -107,24 +102,21 @@ if __name__ == "__main__":
     print(f"-> Suggested k for TF-IDF: {best_k_tfidf}")
     
     #run final clustering
-    kmeans_tfidf = KMeans(n_clusters=best_k_tfidf, random_state=42, n_init=10)
+    kmeans_tfidf = KMeans(n_clusters=best_k_tfidf, random_state=67, n_init=10)
     labels_tfidf = kmeans_tfidf.fit_predict(tfidf_matrix)
     
     #visualize
     visualize_clusters(tfidf_matrix, labels_tfidf, "TF-IDF")
 
-
-
-
-
-    #BERT EMBEDDINGS CLUSTERING
+    # =================== BERT EMBEDDINGS CLUSTERING
     print("\n" + "="*50)
     print("PART B: Clustering with BERT Embeddings")
     print("="*50)
     
     #load hugging face model
     print("Loading Hugging Face model (all-MiniLM-L6-v2)...")
-
+    
+    #point this to downloaded folder if needed
     model = SentenceTransformer('all-MiniLM-L6-v2')
     
     #encode documents
@@ -136,7 +128,7 @@ if __name__ == "__main__":
     print(f"-> Suggested k for Embeddings: {best_k_bert}")
     
     #run final clustering
-    kmeans_bert = KMeans(n_clusters=best_k_bert, random_state=42, n_init=10)
+    kmeans_bert = KMeans(n_clusters=best_k_bert, random_state=67, n_init=10)
     labels_bert = kmeans_bert.fit_predict(embeddings_matrix)
     
     #visualize

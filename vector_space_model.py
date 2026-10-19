@@ -27,7 +27,7 @@ class VectorSpaceModel:
             return tf * idf
             
         elif scheme == 'alternative':
-            #log normalization-idf: (1 + log(tf)) * idf
+            #log normalization-tf: (1 + log(tf)) * idf
             if tf > 0:
                 return (1 + math.log10(tf)) * idf
             return 0
@@ -38,14 +38,14 @@ class VectorSpaceModel:
         for word in query_tokens:
             query_counts[word] = query_counts.get(word, 0) + 1 #if you have counted it, increment, else start from 0
             
-        query_weights = {}
+        scaled_query = {}
         query_length = 0
         
         #calc query weights and length
         for term, count in query_counts.items():
-            w = self.get_weight(count, term, scheme)
-            query_weights[term] = w
-            query_length += w * w #for |q| later for cosine similarity
+            scaled_comp_q = self.get_weight(count, term, scheme)
+            scaled_query[term] = scaled_comp_q
+            query_length += scaled_comp_q * scaled_comp_q #for |q| later for cosine similarity
             
         query_length = math.sqrt(query_length) #same here for |q|
         
@@ -53,29 +53,48 @@ class VectorSpaceModel:
             return []
 
         #score documents
-        scores = {}
-        
-        for term, q_weight in query_weights.items():
+        dot_prod = {}
+        relevant_docs = set()
+
+        for term, scaled_comp_q in scaled_query.items():
             if term in self.inverted_index:
                 postings = self.inverted_index[term]
                 
-                for doc_data in postings:
-                    doc_id = doc_data[0]
-                    doc_tf = doc_data[1]
+                for doc_id, doc_tf in postings:
+                    relevant_docs.add(doc_id)
                     
-                    #calc doc weight
-                    d_weight = self.get_weight(doc_tf, term, scheme)
+                    #calc doc weight for the current term
+                    scaled_comp_d = self.get_weight(doc_tf, term, scheme)
                     
                     #accumulate dot product
-                    if doc_id not in scores:
-                        scores[doc_id] = 0
-                    scores[doc_id] += q_weight * d_weight
+                    if doc_id not in dot_prod:
+                        dot_prod[doc_id] = 0
+                    dot_prod[doc_id] += scaled_comp_q * scaled_comp_d
+
+        #calculate document vector lengths on-the-fly for relevant docs
+        doc_lengths = {}
+        for doc_id in relevant_docs:
+            len_sq = 0
+
+            #here we need to go through all terms to find the weights, inefficient but oh well
+            for term, postings in self.inverted_index.items():
+                for post_doc_id, tf in postings:
+                    if post_doc_id == doc_id:
+                        weight = self.get_weight(tf, term, scheme)
+                        len_sq += weight ** 2
+                        break #found the doc in postings, move to next term
+            doc_lengths[doc_id] = math.sqrt(len_sq)
 
         #finalize and sort
         results = []
-        for doc_id, dot_product in scores.items():
-            #cosine similarity: dot_product / query_length
-            final_score = dot_product / query_length
+        for doc_id, dot_product in dot_prod.items():
+            doc_length = doc_lengths.get(doc_id, 1) #default to 1 to avoid division by zero
+            
+            #full cosine similarity: dot_product / (query_length * doc_length)
+            if query_length > 0 and doc_length > 0:
+                final_score = dot_product / (query_length * doc_length)
+            else:
+                final_score = 0
             results.append([doc_id, final_score])
             
         #sort desc

@@ -4,7 +4,7 @@ A from-scratch information retrieval engine built on the classic **Cystic Fibros
 
 **Highlights**
 
-- The hand-built VSM **beats the tuned scikit-learn baseline** on MAP (0.290 vs 0.268) and on P@10 (0.455 vs 0.415).
+- The hand-built VSM **beats the tuned scikit-learn baseline** on MAP (0.294 vs 0.268) and on P@10 (0.455 vs 0.415).
 - A 36-configuration hyperparameter search over `TfidfVectorizer` (n-grams, `min_df`, `max_df`, sublinear TF).
 - Every retrieval metric (Precision, Recall, F1, P@k, MAP, interpolated 11-point PR curves) is written without IR libraries.
 - Clustering compares TF-IDF against `all-MiniLM-L6-v2` sentence embeddings. Embeddings give clusters that are about **7× better separated** (by silhouette score).
@@ -28,7 +28,7 @@ Each missing document is skipped, and every remaining document keeps its **origi
 ```
 collection/docs ──► indexing.py ──► inverted index ──► vector_space_model.py ──► ranked results
                      (tokenise,       {term: [[doc_id, tf], ...]}   (tf-idf weighting,          │
-                      stop words,                                   cosine-style scoring)       ▼
+                      stop words,                                   cosine similarity)           ▼
                       stemming)                                                         evaluation.py
                                                                                      (P, R, F1, P@k, PR)
 ```
@@ -47,7 +47,7 @@ Two term-weighting schemes, following Salton & Buckley (1988):
 | **Classic** | `tf × log10(N / df)` |
 | **Alternative** (log-normalised) | `(1 + log10(tf)) × log10(N / df)` |
 
-Scores are built term-at-a-time by walking the postings lists. Each score is the query–document dot product normalised by the query vector length, and the documents are returned in ranked order.
+Scores are built term-at-a-time by walking the postings lists. Each document is scored by its **cosine similarity** to the query (the dot product divided by the query and document vector lengths), and the documents are returned in ranked order.
 
 ### 3. Evaluation ([evaluation.py](evaluation.py), [benchmark.py](benchmark.py))
 Precision, Recall, F1, Precision@k, Average Precision / MAP, and 11-point interpolated precision–recall curves, all implemented directly.
@@ -81,8 +81,8 @@ Averaged over the 20 queries:
 | Model | MAP | P@10 | Index time | Search time (20 queries) |
 |---|---|---|---|---|
 | scikit-learn `TfidfVectorizer` (tuned) | 0.268 | 0.415 | 37 ms | 4 ms |
-| **Custom VSM, classic tf-idf** | **0.290** | 0.420 | 24 ms | 6 ms |
-| **Custom VSM, log-tf** | 0.289 | **0.455** | 24 ms | 7 ms |
+| **Custom VSM, classic tf-idf** | **0.294** | **0.455** | 23 ms | 34 s |
+| Custom VSM, log-tf | 0.270 | 0.430 | 23 ms | 34 s |
 
 Best scikit-learn configuration: `ngram_range=(1,1), min_df=1, max_df=0.8, sublinear_tf=True`.
 
@@ -91,7 +91,7 @@ Best scikit-learn configuration: `ngram_range=(1,1), min_df=1, max_df=0.8, subli
 **Observations**
 - **Bigrams did not help.** Every `(1,2)` configuration scored lower than its unigram counterpart, because on a corpus this small most bigrams are too sparse to carry signal.
 - **`min_df=5` hurt the most.** It removed rare but highly discriminative medical terms, and MAP fell from about 0.27 to about 0.17.
-- **Sublinear TF won consistently.** This agrees with the custom log-tf scheme having the best P@10: repeating a term many times should not count linearly.
+- **Sublinear TF won consistently in the scikit-learn search.** In the custom VSM, though, classic raw-tf weighting came out ahead of log-tf (MAP 0.294 vs 0.270), so the benefit of dampening term frequency depends on the rest of the pipeline.
 - **The custom pipeline outperformed scikit-learn's.** Two likely reasons: its stop-word list is far smaller than scikit-learn's English list, so it keeps more terms, and its plural stemming merges forms such as *patient/patients*.
 - F1 is low for every model (about 0.07) because it is computed over the *full* ranked list. Recall is high and precision is diluted, so MAP and P@10 are the meaningful ranking metrics here.
 
