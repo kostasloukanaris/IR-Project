@@ -1,4 +1,5 @@
-#pip install -r requirements.txt
+numpy
 pandas
 matplotlib
 scikit-learn
+sentence-transformers  # only needed for clustering.py

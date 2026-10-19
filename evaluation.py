@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 class Evaluator:
     
-    def calculate_precision(self, retrieved_ids, relevant_ids): #apo auta pou vrhka posa einai swsta
+    def calculate_precision(self, retrieved_ids, relevant_ids):  # of what was retrieved, how much is relevant
         #intersection: find docs that are in BOTH lists (correct answers)
         #convert lists to sets for faster matching
         relevant_set = set(relevant_ids)
@@ -17,7 +17,7 @@ class Evaluator:
         #correct_found / total_found
         return true_positives / len(retrieved_set)
 
-    def calculate_recall(self, retrieved_ids, relevant_ids): #apo ta swsta posa vrhka
+    def calculate_recall(self, retrieved_ids, relevant_ids):  # of what is relevant, how much was retrieved
         relevant_set = set(relevant_ids)
         retrieved_set = set(retrieved_ids)
         

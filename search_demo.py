@@ -1,8 +1,8 @@
 import os
 import pandas as pd
-from processor import load_documents, clean_text, build_inverted_index
-from vsm import VectorSpaceModel
-from metrics import Evaluator
+from indexing import load_documents, clean_text, build_inverted_index
+from vector_space_model import VectorSpaceModel
+from evaluation import Evaluator
 
 def load_queries(filepath):
     # read queries into simple list
@@ -26,7 +26,7 @@ queries_path = os.path.join(base_path, "Queries.txt")
 relevance_path = os.path.join(base_path, "Relevant.txt")
 
 # load docs
-print("--- ΦΑΣΗ 1: Φόρτωση Δεδομένων ---")
+print("--- Phase 1: Loading data ---")
 df_docs = load_documents(docs_path)
 df_docs['tokens'] = df_docs['raw_text'].apply(clean_text)
 
@@ -35,7 +35,7 @@ index = build_inverted_index(df_docs)
 print(f"Index built with {len(index)} terms.")
 
 # init vsm & evaluator
-print("\n--- ΦΑΣΗ 2: Αρχικοποίηση VSM ---")
+print("\n--- Phase 2: Initialising VSM ---")
 vsm = VectorSpaceModel(index, len(df_docs))
 evaluator = Evaluator()
 
@@ -76,15 +76,15 @@ if os.path.exists(queries_path):
         p = evaluator.calculate_precision(retrieved_ids, relevant_ids)
         r = evaluator.calculate_recall(retrieved_ids, relevant_ids)
         f1 = evaluator.calculate_f1(p, r)
-        p_at_5 = evaluator.calculate_precision_at_k(retrieved_ids, relevant_ids, k=10)
+        p_at_10 = evaluator.calculate_precision_at_k(retrieved_ids, relevant_ids, k=10)
         
         print(f"Precision: {p:.4f}")
         print(f"Recall:    {r:.4f}")
         print(f"F1-Score:  {f1:.4f}")
-        print(f"P@5:       {p_at_5:.4f}")
+        print(f"P@10:      {p_at_10:.4f}")
 
         print("\nPlotting Precision-Recall Curve...")
-        evaluator.plot_precision_recall_curve(retrieved_ids, relevant_ids)
+        evaluator.plot_precision_recall_curve(retrieved_ids, relevant_ids, filename="results/pr_curve_query1.png")
     else:
         print("No relevant docs found for this query.")
 

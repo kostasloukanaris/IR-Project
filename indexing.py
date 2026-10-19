@@ -36,7 +36,7 @@ def load_documents(directory_path, total_files=1239):
     doc_ids = []
     contents = []
     
-    print("Έλεγχος αρχείων και φόρτωση...")
+    print("Loading documents...")
     
     
     for i in range(1, total_files + 1):
@@ -60,7 +60,7 @@ def load_documents(directory_path, total_files=1239):
                     doc_ids.append(i) # Keep the ID as a number (to match Relevant.txt)
                     contents.append(raw_text)
             except Exception as e:
-                print(f"Πρόβλημα στο αρχείο {file_id_str}: {e}")
+                print(f"Failed to read file {file_id_str}: {e}")
         else:
             #if file does not exist, skip and the ids will remain consistent
             pass

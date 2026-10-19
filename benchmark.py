@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from processor import load_documents, clean_text, build_inverted_index
-from metrics import Evaluator
-from vsm import VectorSpaceModel
+from indexing import load_documents, clean_text, build_inverted_index
+from evaluation import Evaluator
+from vector_space_model import VectorSpaceModel
 
 
 docs_path = "collection/docs"
@@ -288,4 +288,5 @@ if __name__ == "__main__":
     plt.title('Comparison of Precision-Recall Curves')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.savefig("results/model_comparison_pr.png")
+    print("\nGraph saved successfully to 'results/model_comparison_pr.png'")
